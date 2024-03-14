@@ -1,25 +1,82 @@
-public void tickForAnHour() {
-    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
-    final Runnable tick = () -> {
-        System.out.println("Tick: Processing grid");
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-        IntStream.range(0, this.size).parallel().forEach(y -> {
-            IntStream.range(0, this.size).forEach(x -> {
-                Node previous = this.nodePlane[y][Math.max(x - 1, 0)];
-                Node next = this.nodePlane[y][Math.min(x + 1, this.size - 1)];
-                Node current = this.nodePlane[y][x];
+import static org.mockito.Mockito.*;
 
-                if (!current.equals(previous) && !current.equals(next)) {
-                    current.compareSpatialRelationship(previous);
-                    current.compareSpatialRelationship(next);
-                }
-            });
-        });
-    };
+class ComputationalMatrixTest {
 
-    // ... (rest of the tickForAnHour method remains the same)
+    @Test
+    void testTickForAnHour() {
+        // Create a mock for ScheduledExecutorService
+        ScheduledExecutorService schedulerMock = Mockito.mock(ScheduledExecutorService.class);
+
+        // Create a spy for the ComputationalMatrix (allows mocking some methods, calling real ones on others)
+        ComputationalMatrix matrixSpy = Mockito.spy(new ComputationalMatrix(5)); // Smaller size for testing
+
+        // Override the executor creation to return our mock
+        doReturn(schedulerMock).when(matrixSpy).createScheduledThreadPool(anyInt());
+
+        // Call the method to be tested
+        matrixSpy.tickForAnHour();
+
+        // Verification for the 'tick' task
+        ArgumentCaptor<Runnable> tickCaptor = ArgumentCaptor.forClass(Runnable.class);
+        verify(schedulerMock).scheduleAtFixedRate(tickCaptor.capture(), eq(0L), eq(1L), eq(TimeUnit.SECONDS));
+
+        // Simulate one tick execution (if you want to test the logic inside the tick)
+        tickCaptor.getValue().run(); 
+
+        // Verification for shutdown
+        verify(schedulerMock).schedule(any(Runnable.class), eq(1L), eq(TimeUnit.MINUTES));
+        verify(schedulerMock, times(1)).shutdownNow();
+    }
 }
+
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+class ComputationalMatrixTest {
+
+    @Test
+    void tickForAnHour_processesGridAndCallsCompareSpatialRelationship() {
+        // Create a mock NodePlane
+        Node[][] mockNodePlane = new Node[10][10];
+        for (int y = 0; y < 10; y++) {
+            for (int x = 0; x < 10; x++) {
+                mockNodePlane[y][x] = Mockito.mock(Node.class);
+            }
+        }
+
+        // Create a ComputationalMatrix instance with the mock NodePlane
+        ComputationalMatrix matrix = new ComputationalMatrix(10);
+        matrix.nodePlane = mockNodePlane;
+
+        // Call tickForAnHour
+        matrix.tickForAnHour();
+
+        // Verify interactions
+        for (int y = 0; y < 10; y++) {
+            for (int x = 0; x < 10; x++) {
+                Node previous = mockNodePlane[y][Math.max(x - 1, 0)];
+                Node next = mockNodePlane[y][Math.min(x + 1, 9)];
+                Node current = mockNodePlane[y][x];
+
+                // Verify that compareSpatialRelationship was called twice for each node
+                // (once with previous, once with next)
+                verify(current, times(2)).compareSpatialRelationship(Mockito.any(Node.class));
+            }
+        }
+    }
+}
+
+
 
 
 
