@@ -1,3 +1,35 @@
+public void tickForAnHour() {
+    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+
+    final Runnable tick = () -> {
+        System.out.println("Tick: Processing grid");
+
+        IntStream.range(0, this.size).parallel().forEach(y -> {
+            IntStream.range(0, this.size).forEach(x -> {
+                Node previous = this.nodePlane[y][Math.max(x - 1, 0)];
+                Node next = this.nodePlane[y][Math.min(x + 1, this.size - 1)];
+                Node current = this.nodePlane[y][x];
+
+                if (!current.equals(previous) && !current.equals(next)) {
+                    current.compareSpatialRelationship(previous);
+                    current.compareSpatialRelationship(next);
+                }
+            });
+        });
+    };
+
+    // ... (rest of the tickForAnHour method remains the same)
+}
+
+
+
+
+
+
+
+
+
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
