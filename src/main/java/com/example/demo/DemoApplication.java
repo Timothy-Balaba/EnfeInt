@@ -27,7 +27,12 @@ public class DemoApplication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		List<User> result = userService.fetchData();
-//		System.out.println(result);
+		System.out.println(result);
+//extra copy of sysout
+		System.out.println(result);
+//extra copy of sysout
+		System.out.println(result);
+
 		result.forEach( responseObject -> {
 			System.out.println("------------------------------");
 			System.out.println("Username: " + responseObject.getUsername());
